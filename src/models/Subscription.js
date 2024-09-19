@@ -24,6 +24,10 @@ const subscriptionSchema = new mongoose.Schema({
     end_date: {
         type: Date
     },
+    price: {
+        type: Number,
+        required: true
+    },
     payment_status: {
         type: String,
         enum: ['Pending', 'Completed', 'Failed'],
