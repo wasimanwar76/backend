@@ -8,3 +8,4 @@ router.get('/shifts', authMiddleware, adminMiddleware, getAllShifts);
 router.delete('/shift/:id', authMiddleware, adminMiddleware, deleteShift);
 
 module.exports = router;
+

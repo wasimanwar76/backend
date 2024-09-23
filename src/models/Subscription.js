@@ -1,62 +1,83 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Define the Subscription Schema
-const subscriptionSchema = new mongoose.Schema({
+const subscriptionSchema = new mongoose.Schema(
+  {
     user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     shift: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Shift',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shift",
+      required: true,
     },
     subscription_type: {
-        type: String,
-        enum: ['Monthly', '3 Months', '6 Months', '12 Months'],
-        required: true
+      type: String,
+      enum: ["Monthly", "3 Months", "6 Months", "12 Months"],
+      required: true,
     },
     start_date: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now,
     },
     end_date: {
-        type: Date
+      type: Date,
     },
     price: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true,
     },
     payment_status: {
-        type: String,
-        enum: ['Pending', 'Completed', 'Failed'],
-        default: 'Pending'
+      type: String,
+      enum: ["Pending", "Completed", "Failed"],
+      default: "Pending",
     },
     subscription_status: {
-        type: String,
-        enum: ['Active', 'Pending', 'Expired', 'Cancelled'],
-        default: 'Pending'
-    }
-}, { timestamps: true });
+      type: String,
+      enum: ["Active", "Pending", "Expired", "Cancelled"],
+      default: "Pending",
+    },
+    orderId: {
+      type: String,
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
 
 // Automatically calculate end date based on subscription type
-subscriptionSchema.pre('save', function(next) {
-    const durationMap = {
-        'Monthly': 1,
-        '3 Months': 3,
-        '6 Months': 6,
-        '12 Months': 12
-    };
+subscriptionSchema.pre("save", function (next) {
+  const durationMap = {
+    Monthly: 1,
+    "3 Months": 3,
+    "6 Months": 6,
+    "12 Months": 12,
+  };
 
-    const duration = durationMap[this.subscription_type];
-    const endDate = new Date(this.start_date);
-    endDate.setMonth(endDate.getMonth() + duration);
-    this.end_date = endDate;
+  const duration = durationMap[this.subscription_type];
+  const endDate = new Date(this.start_date);
+  endDate.setMonth(endDate.getMonth() + duration);
+  this.end_date = endDate;
 
-    next();
+  next();
 });
 
-const Subscription = mongoose.model('Subscription', subscriptionSchema);
+// Middleware to update subscription status based on payment status before saving
+subscriptionSchema.pre("save", function (next) {
+  if (this.isModified("payment_status")) {
+    if (this.payment_status === "Completed") {
+      this.subscription_status = "Active";
+    } else if (this.payment_status === "Failed") {
+      this.subscription_status = "Cancelled";
+    } else if (this.payment_status === "Pending") {
+      this.subscription_status = "Pending";
+    }
+  }
+  next();
+});
+
+const Subscription = mongoose.model("Subscription", subscriptionSchema);
 
 module.exports = Subscription;
